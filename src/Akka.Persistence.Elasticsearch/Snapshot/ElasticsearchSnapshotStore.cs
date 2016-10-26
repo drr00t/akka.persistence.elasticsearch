@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Akka.Persistence.ElasticSearch
+namespace Akka.Persistence.Elasticsearch.Snapshot
 {
-    public class Class1
+    public class ElasticsearchSnapshotStore
     {
     }
 }
