@@ -1,25 +1,27 @@
-﻿using Newtonsoft.Json;
+﻿using Nest;
+using Newtonsoft.Json;
 
 namespace Akka.Persistence.ElasticSearch.Journal
 {
+    [ElasticsearchType(Name = nameof(JournalEntry), IdProperty = nameof(Id))]
     public class JournalEntry
     {
-        [JsonProperty]
+        [String(Name = "id")]
         public string Id { get; set; }
 
-        [JsonProperty("PersistenceId")]
+        [String(Name = "persistenceId")]
         public string PersistenceId { get; set; }
 
-        [JsonProperty("SequenceNr")]
+        [Number(Name = "sequenceNr")]
         public long SequenceNr { get; set; }
 
-        [JsonProperty("IsDeleted")]
-        public bool IsDeleted { get; set; }
-
-        [JsonProperty("Payload")]
+        [Object(Name = "payload")]
         public object Payload { get; set; }
 
-        [JsonProperty("Manifest")]
+        [String(Name = "manifest")]
         public string Manifest { get; set; }
+
+        [Boolean(Name = "is_deleted", NullValue = false, Store = true)]
+        public bool IsDeleted { get; set; }
     }
 }

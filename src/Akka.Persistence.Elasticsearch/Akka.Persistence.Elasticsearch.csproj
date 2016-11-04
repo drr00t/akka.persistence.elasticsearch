@@ -7,8 +7,8 @@
     <ProjectGuid>{4AC130B7-156B-4BBD-A50D-BBC7522CBC98}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Akka.Persistence.ElasticSearch</RootNamespace>
-    <AssemblyName>Akka.Persistence.ElasticSearch</AssemblyName>
+    <RootNamespace>Akka.Persistence.Elasticsearch</RootNamespace>
+    <AssemblyName>Akka.Persistence.Elasticsearch</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -89,6 +89,7 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="reference.conf" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
