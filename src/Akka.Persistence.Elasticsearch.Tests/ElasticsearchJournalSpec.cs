@@ -1,4 +1,6 @@
-﻿using Akka.Persistence.Elasticsearch;
+﻿using Akka.Configuration;
+using Akka.Persistence.Elasticsearch;
+using Akka.Persistence.TestKit.Journal;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
@@ -6,9 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
-
-namespace Akka.Persistence.ElasticSearch.Tests
+namespace Akka.Persistence.Elasticsearch.Tests
 {
 
     [Collection("ElasticsearchJournalSpec")]
@@ -16,14 +18,18 @@ namespace Akka.Persistence.ElasticSearch.Tests
     {
         protected override bool SupportsRejectingNonSerializableObjects { get; } = false;
 
-        private static readonly string SpecConfig = @"
+        private static readonly Config SpecConfig;
+
+        static ElasticsearchJournalSpec()
+        {
+            string specConfig = @"
             akka.test.single-expect-default = 3s
             akka.persistence {
                 publish-plugin-commands = on
                 journal {
-                    plugin = ""akka.persistence.journal.mongodb""
-                    mongodb {
-                        class = ""Akka.Persistence.MongoDb.Journal.MongoDbJournal, Akka.Persistence.MongoDb""
+                    plugin = ""akka.persistence.journal.elasticsearch""
+                    elasticsearch {
+                        class = ""Akka.Persistence.Elasticsearch.Journal.ElasticsearchJournal, Akka.Persistence.Elasticsearch""
                         connection-string = ""<ConnectionString>""
                         auto-initialize = on
                         collection = ""EventJournal""
@@ -31,26 +37,14 @@ namespace Akka.Persistence.ElasticSearch.Tests
                 }
             }";
 
-        [Fact]
-        public void Should_ElasticSearch_journal_has_default_config()
-        {
-            var elasticsearch = ElasticsearchPersistence.Get(Sys);
-
-            elasticsearch.JournalSettings.ConnectionString.Should().Be(string.Empty);
-            elasticsearch.JournalSettings.AutoInitialize.Should().BeFalse();
-            elasticsearch.JournalSettings.Collection.Should().Be("EventJournal");
-            elasticsearch.JournalSettings.MetadataCollection.Should().Be("Metadata");
-
+            SpecConfig = ConfigurationFactory.ParseString(specConfig);
+            
         }
 
-        [Fact]
-        public void ElasticSearch_SnapshotStoreSettingsSettings_must_have_default_values()
+        public ElasticsearchJournalSpec(ITestOutputHelper output)
+            :base(SpecConfig, "ElasticsearchJournalSpec", output: output)
         {
-            var elasticsearch = ElasticsearchPersistence.Get(Sys);
-
-            elasticsearch.SnapshotStoreSettings.ConnectionString.Should().Be(string.Empty);
-            elasticsearch.SnapshotStoreSettings.AutoInitialize.Should().BeFalse();
-            elasticsearch.SnapshotStoreSettings.Collection.Should().Be("SnapshotStore");
+            Initialize();
         }
     }
 }

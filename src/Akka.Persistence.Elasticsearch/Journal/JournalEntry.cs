@@ -1,21 +1,22 @@
 ﻿using Nest;
 using Newtonsoft.Json;
+using System;
 
-namespace Akka.Persistence.ElasticSearch.Journal
+namespace Akka.Persistence.Elasticsearch.Journal
 {
     [ElasticsearchType(Name = nameof(JournalEntry), IdProperty = nameof(Id))]
     public class JournalEntry
     {
-        [String(Name = "id")]
+        [String]
         public string Id { get; set; }
 
-        [String(Name = "persistenceId")]
+        [String]
         public string PersistenceId { get; set; }
 
-        [Number(Name = "sequenceNr")]
-        public long SequenceNr { get; set; }
+        [Number]
+        public Int64 SequenceNr { get; set; }
 
-        [Object(Name = "payload")]
+        [Object]
         public object Payload { get; set; }
 
         [String(Name = "manifest")]

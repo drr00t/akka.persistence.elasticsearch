@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 
-namespace Akka.Persistence.ElasticSearch.Tests
+namespace Akka.Persistence.Elasticsearch.Tests
 {
 
     [Collection("ElasticsearchSpec")]

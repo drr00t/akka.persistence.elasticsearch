@@ -79,9 +79,9 @@
     <Compile Include="ElasticsearchSettings.cs" />
     <Compile Include="ElasticsearchPersistenceProvider.cs" />
     <Compile Include="ElasticsearchPersistence.cs" />
-    <Compile Include="Jornal\ElasticsearchJournal.cs" />
-    <Compile Include="Jornal\MetadataEntry.cs" />
-    <Compile Include="Jornal\JournalEntry.cs" />
+    <Compile Include="Journal\ElasticsearchJournal.cs" />
+    <Compile Include="Journal\MetadataEntry.cs" />
+    <Compile Include="Journal\JournalEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Snapshot\SnapshotEntry.cs" />
     <Compile Include="Snapshot\ElasticsearchSnapshotStore.cs" />
