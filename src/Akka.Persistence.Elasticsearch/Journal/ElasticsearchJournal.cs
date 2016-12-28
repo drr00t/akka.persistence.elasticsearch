@@ -34,7 +34,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
             base.PreStart();
 
             string endpoint = "http://localhost:9200/";
-            string indexStore = "eventstore";
+            string indexStore = "eventstore-dados";
             string typeJournal = "journalentry";
             string typeMetadata = "metadataentry";
             int shards = 1;
@@ -49,7 +49,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
 
             var connectionPool = new SniffingConnectionPool(new[] { node });
 
-            var config = new ConnectionSettings(connectionPool)
+            var config = new ConnectionSettings(node)
                     .DisableDirectStreaming()
                     .EnableHttpCompression()
             ;
@@ -82,29 +82,24 @@ namespace Akka.Persistence.Elasticsearch.Journal
         public override async Task<long> ReadHighestSequenceNrAsync(string persistenceId, long fromSequenceNr)
         {
             var builder = _elasticClient.SearchAsync<MetadataEntry>(
-                s => s.Sort(srt => srt.Descending(p => p.SequenceNr)).Query(
+                s => s.Size(1)
+                .Sort(ss => ss.Descending(p => p.SequenceNr))
+                .Query(
                     qr => qr.Term(
                         tr => tr.Field(
                             f => f.PersistenceId).Value(persistenceId))));
-                            
-                    //.Limit(
-                    //            ql => ql.Limit(1)))
-                    //q => q.Bool(
-                    //    bo => bo.Sort(
-                    //        ss => ss.Descending(p => p.SequenceNr).Limit(
-                    //            ql => ql.Limit(1)))
 
-                //.ContinueWith<long>(p => p.Result.Documents
-                //    .Where(entry => entry.PersistenceId.Equals(persistenceId))
-                //    .Select(x => x.SequenceNr > fromSequenceNr).Single();
-            //;
+            //builder.ContinueWith<long>(p => p.Result.Documents
+                    //.Where(entry => entry.PersistenceId.Equals(persistenceId))
+                    //.Select(x => x.SequenceNr > fromSequenceNr).Single();
+                    //;
 
             //Builders<MetadataEntry>.Filter;
             //var filter = builder.Eq(x => x.PersistenceId, persistenceId);
 
             //var highestSequenceNr = await _metadataCollection.Value.Find(filter).Project(x => x.SequenceNr).FirstOrDefaultAsync();
 
-            return null;
+            return 8;
         }
 
         public override Task ReplayMessagesAsync(IActorContext context, string persistenceId, long fromSequenceNr, long toSequenceNr, long max, Action<IPersistentRepresentation> recoveryCallback)

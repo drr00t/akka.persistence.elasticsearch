@@ -13,32 +13,32 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Elasticsearch.Tests
 {
 
-    [Collection("ElasticsearchJournalExampleSpec")]
-    public class ElasticsearchJournalExampleSpec : Xunit.
-    {
-        protected override bool SupportsRejectingNonSerializableObjects { get; } = false;
+    //[Collection("ElasticsearchJournalExampleSpec")]
+    //public class ElasticsearchJournalExampleSpec : Xunit
+    //{
+    //    protected override bool SupportsRejectingNonSerializableObjects { get; } = false;
 
-        private static readonly Config SpecConfig;
+    //    private static readonly Config SpecConfig;
 
-        static ElasticsearchJournalExampleSpec()
-        {
-            string specConfig = @"
-            akka.test.single-expect-default = 3s
-            akka.persistence {
-                publish-plugin-commands = on
-                journal {
-                    plugin = ""akka.persistence.journal.elasticsearch""
-                    elasticsearch {
-                        class = ""Akka.Persistence.Elasticsearch.Journal.ElasticsearchJournal, Akka.Persistence.Elasticsearch""
-                        connection-string = ""<ConnectionString>""
-                        auto-initialize = on
-                        collection = ""EventJournal""
-                    }
-                }
-            }";
+    //    static ElasticsearchJournalExampleSpec()
+    //    {
+    //        string specConfig = @"
+    //        akka.test.single-expect-default = 3s
+    //        akka.persistence {
+    //            publish-plugin-commands = on
+    //            journal {
+    //                plugin = ""akka.persistence.journal.elasticsearch""
+    //                elasticsearch {
+    //                    class = ""Akka.Persistence.Elasticsearch.Journal.ElasticsearchJournal, Akka.Persistence.Elasticsearch""
+    //                    connection-string = ""<ConnectionString>""
+    //                    auto-initialize = on
+    //                    collection = ""EventJournal""
+    //                }
+    //            }
+    //        }";
 
-            SpecConfig = ConfigurationFactory.ParseString(specConfig);
+    //        SpecConfig = ConfigurationFactory.ParseString(specConfig);
    
-        }
-    }
+    //    }
+    //}
 }
