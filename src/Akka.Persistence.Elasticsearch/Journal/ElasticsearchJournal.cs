@@ -82,7 +82,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
         public override async Task<long> ReadHighestSequenceNrAsync(string persistenceId, long fromSequenceNr)
         {
             var builder = _elasticClient.SearchAsync<MetadataEntry>(
-                s => s.Size(1)
+                s => s.Size(1).Index(Indices.Index(new IndexName { Name = } )
                 .Sort(ss => ss.Descending(p => p.SequenceNr))
                 .Query(
                     qr => qr.Term(
