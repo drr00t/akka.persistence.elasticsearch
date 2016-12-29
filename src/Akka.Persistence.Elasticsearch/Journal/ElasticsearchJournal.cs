@@ -34,9 +34,6 @@ namespace Akka.Persistence.Elasticsearch.Journal
             base.PreStart();
 
             string endpoint = "http://localhost:9200/";
-            string indexStore = "eventstore-dados";
-            string typeJournal = "journalentry";
-            string typeMetadata = "metadataentry";
             int shards = 1;
             int replicaShards = 0;
             string user = "user";
@@ -54,19 +51,19 @@ namespace Akka.Persistence.Elasticsearch.Journal
                     .EnableHttpCompression()
             ;
 
-            _elasticClient = new ElasticClient(config);
+            _elasticClient = new ElasticClient();
 
-            if (_settings.AutoInitialize)
-            {
-                if (!_elasticClient.IndexExists(_indexStore).Exists)
-                {
-                    _elasticClient.CreateIndex(_indexStore, c => c.Settings(s => s
-                    .NumberOfReplicas(0)
-                    .NumberOfShards(1))
-                    .Mappings(m => m.Map<JournalEntry>(map => map.AutoMap()))
-                    .Mappings(m => m.Map<MetadataEntry>(map => map.AutoMap())));
-                }                
-            }
+            //if (_settings.AutoInitialize)
+            //{
+            //    if (!_elasticClient.IndexExists(String.Format("{0}-{1}",_indexStore, "dados")).Exists)
+            //    {
+            //        _elasticClient.CreateIndex(String.Format("{0}-{1}", _indexStore, "dados"), c => c.Settings(s => s
+            //        .NumberOfReplicas(0)
+            //        .NumberOfShards(1))
+            //        .Mappings(m => m.Map<JournalEntry>(map => map.AutoMap()))
+            //        .Mappings(m => m.Map<MetadataEntry>(map => map.AutoMap())));
+            //    }                
+            //}
             
             //database or index setup
 
@@ -81,57 +78,54 @@ namespace Akka.Persistence.Elasticsearch.Journal
 
         public override async Task<long> ReadHighestSequenceNrAsync(string persistenceId, long fromSequenceNr)
         {
-            var builder = _elasticClient.SearchAsync<MetadataEntry>(
-                s => s.Size(1).Index(Indices.Index(new IndexName { Name = } )
+            var metadataEntry = _elasticClient.SearchAsync<MetadataEntry>(
+                s => s.Size(1)
                 .Sort(ss => ss.Descending(p => p.SequenceNr))
                 .Query(
                     qr => qr.Term(
                         tr => tr.Field(
-                            f => f.PersistenceId).Value(persistenceId))));
+                            f => f.PersistenceId).Value(persistenceId)))
+                            .Index(Indices.Index(new IndexName { Name = String.Format("{0}-{1}", _indexStore, persistenceId), Type = typeof(MetadataEntry) })));
 
-            //builder.ContinueWith<long>(p => p.Result.Documents
-                    //.Where(entry => entry.PersistenceId.Equals(persistenceId))
-                    //.Select(x => x.SequenceNr > fromSequenceNr).Single();
-                    //;
+            return await metadataEntry.ContinueWith<long>(p => p.Result.Documents.Single().SequenceNr);// .Select(x => x.SequenceNr > fromSequenceNr));
+
+            
 
             //Builders<MetadataEntry>.Filter;
             //var filter = builder.Eq(x => x.PersistenceId, persistenceId);
 
             //var highestSequenceNr = await _metadataCollection.Value.Find(filter).Project(x => x.SequenceNr).FirstOrDefaultAsync();
 
-            return 8;
+            //return 8;
         }
 
-        public override Task ReplayMessagesAsync(IActorContext context, string persistenceId, long fromSequenceNr, long toSequenceNr, long max, Action<IPersistentRepresentation> recoveryCallback)
+        public override async Task ReplayMessagesAsync(IActorContext context, string persistenceId, long fromSequenceNr, long toSequenceNr, long max, Action<IPersistentRepresentation> recoveryCallback)
         {
-            //var messageList = messages.ToList();
-            //var writeTasks = messageList.Select(async message =>
-            //{
-            //    var persistentMessages = ((IImmutableList<IPersistentRepresentation>)message.Payload).ToArray();
+            // Do not replay messages if limit equal zero
+            if (max == 0)
+                return;
 
-            //    var journalEntries = persistentMessages.Select(ToJournalEntry).ToList();
-            //    await _journalCollection.Value.InsertManyAsync(journalEntries);
-            //});
+            var entries = await _elasticClient.SearchAsync<JournalEntry>(
+                s => s.Sort(ss => ss.Ascending(p => p.SequenceNr))
+                .Query(
+                    qr => qr.Range(
+                        rg => rg.Field(f => f.SequenceNr)
+                            .GreaterThanOrEquals(fromSequenceNr)
+                            .LessThanOrEquals(toSequenceNr)))
+                            .Index(Indices.Index(new IndexName { Name = String.Format("{0}-{1}", _indexStore, persistenceId), Type = typeof(JournalEntry) })));
 
-            //await SetHighSequenceId(messageList);
+            if (entries.Total == 0)
+                return;
 
-            //return await Task<IImmutableList<Exception>>
-            //    .Factory
-            //    .ContinueWhenAll(writeTasks.ToArray(),
-            //        tasks => tasks.Select(t => t.IsFaulted ? TryUnwrapException(t.Exception) : null).ToImmutableList());
-            return null;
+            foreach(var doc in entries.Documents)
+            {
+                recoveryCallback(ToPersistenceRepresentation(doc.Payload as JournalEntry, context.Sender));
+            }
         }
 
         protected override Task DeleteMessagesToAsync(string persistenceId, long toSequenceNr)
         {
-            //var builder = Builders<JournalEntry>.Filter;
-            //var filter = builder.Eq(x => x.PersistenceId, persistenceId);
-
-            //if (toSequenceNr != long.MaxValue)
-            //    filter &= builder.Lte(x => x.SequenceNr, toSequenceNr);
-
-            //return _journalCollection.Value.DeleteManyAsync(filter);
-            return null;
+            return _elasticClient.DeleteAsync(DocumentPath<JournalEntry>.Id(toSequenceNr), u => u.Index(String.Format("{0}-{1}", _indexStore, persistenceId)));
         }
 
         protected override async Task<IImmutableList<Exception>> WriteMessagesAsync(IEnumerable<AtomicWrite> messages)
@@ -142,7 +136,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
                 var persistentMessages = ((IImmutableList<IPersistentRepresentation>)message.Payload).ToArray();
 
                 var journalEntries = persistentMessages.Select(ToJournalEntry).ToList();
-                await _elasticClient.IndexManyAsync(journalEntries, _indexStore, _typeJournal);
+                await _elasticClient.IndexManyAsync(journalEntries, "eventstore-dados", _typeJournal);
             });
 
             await SetHighSequenceId(messageList);
@@ -178,7 +172,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
 
             var metadataEntry = new MetadataEntry
             {
-                Id = persistenceId,
+                Id = String.Format("{0}-{1}", persistenceId, highSequenceId),
                 PersistenceId = persistenceId,
                 SequenceNr = highSequenceId
             };
