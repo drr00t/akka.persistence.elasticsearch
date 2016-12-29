@@ -48,6 +48,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
 
             var config = new ConnectionSettings(node)
                     .DisableDirectStreaming()
+                    .DefaultIndex("eventstore-dados")
                     .EnableHttpCompression()
             ;
 
@@ -112,7 +113,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
                         rg => rg.Field(f => f.SequenceNr)
                             .GreaterThanOrEquals(fromSequenceNr)
                             .LessThanOrEquals(toSequenceNr)))
-                            .Index(Indices.Index(new IndexName { Name = String.Format("{0}-{1}", _indexStore, persistenceId), Type = typeof(JournalEntry) })));
+                            .Index(Indices.Index(new IndexName { Name = "eventstore-dados", Type = typeof(JournalEntry) })));
 
             if (entries.Total == 0)
                 return;
@@ -136,7 +137,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
                 var persistentMessages = ((IImmutableList<IPersistentRepresentation>)message.Payload).ToArray();
 
                 var journalEntries = persistentMessages.Select(ToJournalEntry).ToList();
-                await _elasticClient.IndexManyAsync(journalEntries, "eventstore-dados", _typeJournal);
+                await _elasticClient.IndexManyAsync(journalEntries, new IndexName { Name = "eventstore-dados" });
             });
 
             await SetHighSequenceId(messageList);
@@ -151,7 +152,7 @@ namespace Akka.Persistence.Elasticsearch.Journal
         {
             return new JournalEntry
             {
-                Id = message.PersistenceId + "_" + message.SequenceNr,
+                Id = message.PersistenceId + "-" + message.SequenceNr,
                 IsDeleted = message.IsDeleted,
                 Payload = message.Payload,
                 PersistenceId = message.PersistenceId,
@@ -172,14 +173,12 @@ namespace Akka.Persistence.Elasticsearch.Journal
 
             var metadataEntry = new MetadataEntry
             {
-                Id = String.Format("{0}-{1}", persistenceId, highSequenceId),
+                Id = String.Format("{0}-{1}", "dados", highSequenceId),
                 PersistenceId = persistenceId,
                 SequenceNr = highSequenceId
             };
 
-            await _elasticClient.UpdateAsync<MetadataEntry, MetadataEntry>(
-                    DocumentPath<MetadataEntry>.Id(metadataEntry.Id),
-                    d => d.Doc(metadataEntry).DocAsUpsert());
+            await _elasticClient.IndexAsync<MetadataEntry>(metadataEntry,d => d.Index(new IndexName { Name = "eventstore-dados"}));
         }
     }
 }
