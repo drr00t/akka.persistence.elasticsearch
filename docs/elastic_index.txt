@@ -1,3 +1,20 @@
+GET /eventstore-dados/journalentry/_search
+
+GET /eventstore-dados/journalentry/_search
+{
+  "sort":[
+      {"sequenceNr" : {"order" : "asc"}}
+   ],
+  "query":{
+    "range":{ 
+      "sequenceNr":{
+        "gte": 1,
+        "lte": 3
+      }
+    }
+  }
+}
+
 GET /eventstore-dados/metadataentry/_search
 {
   "sort":[
