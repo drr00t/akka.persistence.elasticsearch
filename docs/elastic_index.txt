@@ -1,0 +1,126 @@
+GET /eventstore-dados/journalentry/_search
+
+GET /eventstore-dados/journalentry/_search
+{
+  "sort":[
+      {"sequenceNr" : {"order" : "asc"}}
+   ],
+  "query":{
+    "range":{ 
+      "sequenceNr":{
+        "gte": 1,
+        "lte": 3
+      }
+    }
+  }
+}
+
+GET /eventstore-dados/metadataentry/_search
+{
+  "sort":[
+      {"sequenceNr" : {"order" : "desc"}}
+   ],
+  "query":{
+    "term":{"persistenceId":"dados"}
+  },
+   "size":1
+}
+
+GET /eventstore-dados/metadataentry/_mapping
+
+POST /eventstore-dados/metadataentry
+{
+  "id":"dados-4",
+  "persistenceId":"dados",
+  "sequenceNr":4
+}
+
+POST /eventstore-dados/journalentry
+{
+  "id":"dados-4",
+  "manifest":"teste2",
+  "persistenceId":"dados",
+  "sequenceNr":4,
+  "payload":{
+    "user" : "teste",
+    "post_date" : "2009-11-15T14:12:12",
+    "message" : "trying out Elasticsearch"
+  }
+}
+
+GET /eventstore-dados/journalentry/_search
+
+PUT eventstore-dados
+{
+    "settings" : {
+        "index" : {
+            "number_of_shards" : 1
+        }
+    }
+}
+
+GET /_template/eventstore
+
+PUT /_template/template_1
+{
+    "template" : "*",
+    "order" : 0,
+    "settings" : {
+        "number_of_shards" : 1
+    },
+    "mappings" : {
+        "type1" : {
+            "_source" : { "enabled" : false }
+        }
+    }
+}
+
+PUT /_template/eventstore
+{
+  "template": "eventstore-*",
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "metadataentry": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "persistenceId": {
+          "type": "string"
+        },
+        "sequenceNr": {
+          "type": "long"
+        }
+      }
+    },
+    "journalentry": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "persistenceId": {
+          "type": "string"
+        },
+        "sequenceNr": {
+          "type": "long"
+        },
+        "payload": {
+          "type": "object"
+        },
+        "manifest": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
